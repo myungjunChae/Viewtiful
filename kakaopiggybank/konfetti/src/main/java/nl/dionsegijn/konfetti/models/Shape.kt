@@ -81,12 +81,6 @@ interface Shape {
             }
 
         override fun draw(canvas: Canvas, paint: Paint, size: Float) {
-            if (tint) {
-                drawable.setColorFilter(paint.color, PorterDuff.Mode.SRC_IN)
-            } else {
-                drawable.alpha = paint.alpha
-            }
-
             val height = (size * heightRatio).toInt()
             val top = ((size - height) / 2f).toInt()
 

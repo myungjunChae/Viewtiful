@@ -27,7 +27,7 @@ class RenderSystem(
 ) {
 
     private val random = Random()
-    private var gravity = Vector(0f, 0.01f)
+    private var gravity = Vector(0f, 0.05f)
     private val particles: MutableList<Confetti> = mutableListOf()
 
     init {

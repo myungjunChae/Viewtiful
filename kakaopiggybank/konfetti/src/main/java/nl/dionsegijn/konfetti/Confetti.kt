@@ -29,15 +29,15 @@ class Confetti(
     private var rotationWidth = width
 
     // Expected frame rate
-    private var speedF = 60f
+    private var speedF = 180f
 
     private var alpha: Int = 255
 
     init {
-        val minRotationSpeed = 0.29f * Resources.getSystem().displayMetrics.density
+        val minRotationSpeed = 0.4f * Resources.getSystem().displayMetrics.density
         val maxRotationSpeed = minRotationSpeed * 3
         rotationSpeed = maxRotationSpeed * Random.nextFloat() + minRotationSpeed
-        paint.color = color
+        println("$rotationSpeed ?????")
     }
 
     private fun getSize(): Float = width
@@ -68,9 +68,6 @@ class Confetti(
         val rSpeed = (rotationSpeed * deltaTime) * speedF
         rotation += rSpeed
         if (rotation >= 360) rotation = 0f
-
-        rotationWidth -= rSpeed
-        if (rotationWidth < 0) rotationWidth = width
     }
 
     private fun updateAlpha(deltaTime: Float) {
@@ -102,9 +99,9 @@ class Confetti(
 
         val saveCount = canvas.save()
         canvas.translate(location.x - centerX, location.y)
-        canvas.rotate(rotation, centerX, width / 2)
-        canvas.scale(scaleX, 1f)
 
+        val center = width/2f
+        canvas.rotate(rotation, center,center)
         shape.draw(canvas, paint, width)
         canvas.restoreToCount(saveCount)
     }
