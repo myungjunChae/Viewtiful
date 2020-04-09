@@ -21,6 +21,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    kotlinOptions{jvmTarget = "1.8"}
 }
 
 dependencies {
@@ -42,4 +43,5 @@ dependencies {
 
     //Custom Library
     implementation project(":konfetti")
+    implementation project(":roulette")
 }
