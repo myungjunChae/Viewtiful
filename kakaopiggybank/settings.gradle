@@ -1,2 +1,2 @@
-include ':app', ':konfetti'
+include ':app', ':konfetti', ':roulette'
 rootProject.name='kakaopiggybank'
