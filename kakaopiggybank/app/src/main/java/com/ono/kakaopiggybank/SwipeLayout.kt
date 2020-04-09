@@ -10,11 +10,7 @@ import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.AbsListView
 import android.widget.ListView
-import androidx.core.view.NestedScrollingChild
-import androidx.core.view.NestedScrollingChildHelper
-import androidx.core.view.NestedScrollingParent
-import androidx.core.view.NestedScrollingParentHelper
-import androidx.core.view.ViewCompat
+import androidx.core.view.*
 import androidx.core.widget.ListViewCompat
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -24,6 +20,10 @@ import org.reactivestreams.Publisher
 import java.lang.Math.abs
 import java.util.*
 import java.util.concurrent.TimeUnit
+import android.view.Gravity
+import android.content.res.TypedArray
+import android.widget.TextView
+
 
 class SwipeLayout
 @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
@@ -31,7 +31,6 @@ class SwipeLayout
 
     companion object {
         private val LOG_TAG = SwipeLayout::class.java!!.simpleName
-        private val LAYOUT_ATTRS = intArrayOf(android.R.attr.enabled)
 
         private const val INVALID_POINTER = -1
         private const val DRAG_RATE = .5f
@@ -46,26 +45,34 @@ class SwipeLayout
     private var mNestedScrollInProgress: Boolean = false
 
     /** about drag **/
-    private var mTarget: View? = null                                               //현재 터치 childview
-    private var mDefaultLayoutOffsetTop: Int = 0                                    //초기 Layout의 Top offset
-    private var mCurrentLayoutOffsetTop: Int = 0                                    //현재 Layout의 Top offset된
+    private var mTarget: View? =
+        null                                               //현재 터치 childview
+    private var mDefaultLayoutOffsetTop: Int =
+        0                                    //초기 Layout의 Top offset
+    private var mCurrentLayoutOffsetTop: Int =
+        0                                    //현재 Layout의 Top offset된
 
     private val mTouchSlop: Int                                                     //터치로 인식되는 최대 범위
-            by lazy {ViewConfiguration.get(context).scaledTouchSlop}
+            by lazy { ViewConfiguration.get(context).scaledTouchSlop }
     private val mDragLimit = 64 * resources.displayMetrics.density           //드래그 가능 최대 범위
 
-    private var mInitialMotionY = 0f                                                //터치가 아닌 드래그로 판명된 지점의 y offset
-    private var mInitialDownY = 0f                                                  //맨처음 터치 지점의 y offset
+    private var mInitialMotionY =
+        0f                                                //터치가 아닌 드래그로 판명된 지점의 y offset
+    private var mInitialDownY =
+        0f                                                  //맨처음 터치 지점의 y offset
     private var mActivePointerId = INVALID_POINTER                             //현재 활성화되어있는 손가락 포인터
 
     private var mIsBeingDragged: Boolean = false                                    //드래그 여부
     private var mReturningToStart: Boolean = false                                  //드래그 후, 리턴 중 여부
 
-    private var mFrom: Int = 0                                                      //드래그가 끝난 시점의 y offset
+    private var mFrom: Int =
+        0                                                      //드래그가 끝난 시점의 y offset
 
     /** about callback **/
-    private var mDragSuccess : OnDragSuccess? = null
+    private var mDragSuccess: OnDragSuccess? = null
     private var mChildScrollUpCallback: OnChildScrollUpCallback? = null
+
+    private var mGravity = Gravity.TOP
 
     init {
         setWillNotDraw(false)
@@ -77,8 +84,8 @@ class SwipeLayout
         mDefaultLayoutOffsetTop = mCurrentLayoutOffsetTop
         moveToStart(1.0f)
 
-        val a = context.obtainStyledAttributes(attrs, LAYOUT_ATTRS)
-        isEnabled = a.getBoolean(0, true)
+        val a = context.obtainStyledAttributes(attrs, R.styleable.SwipeLayout, 0, 0)
+        mGravity = a.getInteger(R.styleable.SwipeLayout_android_gravity, Gravity.TOP)
         a.recycle()
     }
 
@@ -112,41 +119,47 @@ class SwipeLayout
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        val width = measuredWidth
-        val height = measuredHeight
-        if (childCount == 0) {
-            return
+        val start = paddingStart
+        val top = paddingTop
+
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            var childStart = start + child.paddingStart
+            var childEnd = childStart + child.measuredWidth
+            var childTop = top + child.paddingTop
+            var childBottom = childTop + child.measuredHeight
+
+            if (mGravity == Gravity.CENTER) {
+                childStart += measuredWidth / 2 - child.measuredWidth / 2
+                childEnd = childStart + child.measuredWidth
+                child.layout(childStart, childTop, childEnd, childBottom)
+            } else {
+                child.layout(childStart, childTop, childEnd, childBottom)
+            }
+            val t = child.layoutParams
         }
-        if (mTarget == null) {
-            ensureTarget()
-        }
-        if (mTarget == null) {
-            return
-        }
-        val child = mTarget
-        val childLeft = paddingLeft
-        val childTop = paddingTop
-        val childWidth = width - paddingLeft - paddingRight
-        val childHeight = height - paddingTop - paddingBottom
-        child!!.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            val lp = child.layoutParams
+
+            val widthSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
+            val heightSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY)
+
+            if (lp.width < 0 || lp.height < 0) {
+                if (lp.width < 0 && lp.height < 0)
+                    child.measure(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+                else if (lp.width < 0)
+                    child.measure(LayoutParams.WRAP_CONTENT, heightSpec)
+                else if (lp.height < 0)
+                    child.measure(widthSpec, LayoutParams.WRAP_CONTENT)
+            } else
+                child.measure(widthSpec, heightSpec)
+
+        }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        if (mTarget == null) {
-            ensureTarget()
-        }
-        if (mTarget == null) {
-            return
-        }
-        mTarget!!.measure(
-            View.MeasureSpec.makeMeasureSpec(
-                measuredWidth - paddingLeft - paddingRight,
-                View.MeasureSpec.EXACTLY
-            ), View.MeasureSpec.makeMeasureSpec(
-                measuredHeight - paddingTop - paddingBottom, View.MeasureSpec.EXACTLY
-            )
-        )
     }
 
     fun canChildScrollUp(): Boolean {
@@ -174,7 +187,11 @@ class SwipeLayout
 
     /** NestedScrollingParent**/
 
-    override fun onStartNestedScroll(child: View, target: View, nestedScrollAxes: Int): Boolean {
+    override fun onStartNestedScroll(
+        child: View,
+        target: View,
+        nestedScrollAxes: Int
+    ): Boolean {
         return (isEnabled && !mReturningToStart && nestedScrollAxes and ViewCompat.SCROLL_AXIS_VERTICAL != 0)
     }
 
@@ -391,7 +408,10 @@ class SwipeLayout
             MotionEvent.ACTION_MOVE -> {
                 pointerIndex = ev.findPointerIndex(mActivePointerId)
                 if (pointerIndex < 0) {
-                    Log.e(LOG_TAG, "Got ACTION_MOVE event but have an invalid active pointer id.")
+                    Log.e(
+                        LOG_TAG,
+                        "Got ACTION_MOVE event but have an invalid active pointer id."
+                    )
                     return false
                 }
 
@@ -493,7 +513,8 @@ class SwipeLayout
         ))).toFloat() * 2f)
         val extraMove = (slingshotDist) * tensionPercent * 2f
 
-        val targetY = mDefaultLayoutOffsetTop + ((slingshotDist * dragPercent) + extraMove).toInt()
+        val targetY =
+            mDefaultLayoutOffsetTop + ((slingshotDist * dragPercent) + extraMove).toInt()
         setLayoutOffset(targetY - mCurrentLayoutOffsetTop)
     }
 
@@ -552,7 +573,7 @@ class SwipeLayout
 
 
     /** callback **/
-    fun setOnDragSuccessCallback(callback: OnDragSuccess?){
+    fun setOnDragSuccessCallback(callback: OnDragSuccess?) {
         mDragSuccess = callback
     }
 
