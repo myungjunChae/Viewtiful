@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">monsterpub</string>
+    <string name="canvasContentDescription">DrawableView</string>
+</resources>
