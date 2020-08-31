@@ -24,12 +24,15 @@
 - Drawing -> android.graphics (Path + paint + LinearGradient)
 - Async -> android.os.Handler
 
-### 미완성 기능
-- 멀티 터치
-- 부드러운 드로잉
-- 위치에 따른 색상 변화 -> 시간에 따른 색상 변화
-
 | 몬스터펍 | 몬스터펍 클론 |
 | :---: | :---: |
 |<img src="./resource/monsterpub.gif" width="200"> |<img src="./resource/monsterpub_clone.gif" width="200"> |
 
+## 카카오톡 하트
+### 기능 구현
+- HeartView -> Custom view
+- Animation -> android.view.animation
+
+| 카카오톡 하트 | 카카오톡 하트 클론 |
+| :---: | :---: |
+|<img src="./resource/kakaoheart.gif" width="200"> |<img src="./resource/kakaoheart_clone.gif" width="200"> |

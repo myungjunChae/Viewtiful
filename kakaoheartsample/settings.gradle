@@ -1,0 +1,3 @@
+include ':kakaoheart'
+include ':app'
+rootProject.name = "kakaoheartsample"
